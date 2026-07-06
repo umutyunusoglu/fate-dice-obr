@@ -1,14 +1,14 @@
 {
   "name": "Fate Zarları",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifest_version": 1,
-  "author": "Sen :)",
+  "author": "Umut",
   "description": "Fate / Fudge zarları (4dF) at, beceri modifikatörü ekle ve sonucu odadaki herkese duyur.",
-  "icon": "icon.svg",
+  "icon": "https://umutyunusoglu.github.io/fate-dice-obr/icon.svg",
   "action": {
     "title": "Fate Zarları",
-    "icon": "icon.svg",
-    "popover": "index.html",
+    "icon": "https://umutyunusoglu.github.io/fate-dice-obr/icon.svg",
+    "popover": "https://umutyunusoglu.github.io/fate-dice-obr/index.html",
     "height": 600,
     "width": 340
   }
