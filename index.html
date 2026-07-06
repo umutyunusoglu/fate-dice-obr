@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fate Zarları</title>
+<style>
+  :root {
+    --bg: #151a26;
+    --panel: #1e2534;
+    --panel-2: #262e40;
+    --line: #333c52;
+    --ink: #e9edf7;
+    --ink-dim: #9aa4bd;
+    --accent: #6fa8ff;
+    --plus: #7bd39a;
+    --minus: #e37a7a;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.45 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+  h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  h1 span.badge {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--accent);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 8px;
+  }
+
+  /* Dice row */
+  .dice {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .die {
+    aspect-ratio: 1;
+    border-radius: var(--radius);
+    background: linear-gradient(160deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--ink-dim);
+    user-select: none;
+    transition: transform 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  }
+  .die.plus  { color: var(--plus);  border-color: color-mix(in srgb, var(--plus) 45%, var(--line)); }
+  .die.minus { color: var(--minus); border-color: color-mix(in srgb, var(--minus) 45%, var(--line)); }
+  .die.rolling { animation: tumble 0.36s ease infinite; }
+  @keyframes tumble {
+    0%   { transform: rotate(0deg)   scale(1); }
+    50%  { transform: rotate(8deg)   scale(0.94); }
+    100% { transform: rotate(-6deg)  scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .die.rolling { animation: none; }
+  }
+
+  /* Result */
+  .result {
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    min-height: 74px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+  }
+  .result .total { font-size: 30px; font-weight: 800; }
+  .result .total.pos { color: var(--plus); }
+  .result .total.neg { color: var(--minus); }
+  .result .ladder { color: var(--ink-dim); font-size: 13px; }
+  .result .empty { color: var(--ink-dim); font-size: 13px; }
+
+  /* Controls */
+  .controls { display: flex; gap: 10px; align-items: stretch; }
+  .mod {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .mod button {
+    width: 34px; height: 100%;
+    background: none; border: none;
+    color: var(--ink-dim); font-size: 18px; cursor: pointer;
+  }
+  .mod button:hover { color: var(--ink); background: var(--panel-2); }
+  .mod .value {
+    min-width: 64px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .mod .value small {
+    display: block; font-weight: 500; font-size: 10px;
+    color: var(--ink-dim); letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  #rollBtn {
+    flex: 1;
+    background: var(--accent);
+    color: #0d1320;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    padding: 12px;
+  }
+  #rollBtn:hover { filter: brightness(1.08); }
+  #rollBtn:disabled { opacity: 0.55; cursor: wait; }
+  #rollBtn:focus-visible, .mod button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  /* History */
+  .history h2 {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 6px;
+  }
+  #log { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  #log li {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  #log .who { font-weight: 700; }
+  #log .faces { color: var(--ink-dim); letter-spacing: 0.15em; font-weight: 700; }
+  #log .sum { margin-left: auto; font-weight: 800; }
+  #log .sum.pos { color: var(--plus); }
+  #log .sum.neg { color: var(--minus); }
+  #log .none { color: var(--ink-dim); border-style: dashed; justify-content: center; }
+</style>
+</head>
+<body>
+  <h1>Fate Zarları <span class="badge">4dF</span></h1>
+
+  <div class="dice" aria-label="Zarlar">
+    <div class="die" id="d0">·</div>
+    <div class="die" id="d1">·</div>
+    <div class="die" id="d2">·</div>
+    <div class="die" id="d3">·</div>
+  </div>
+
+  <div class="result" id="result" aria-live="polite">
+    <div class="empty">Zar atmak için aşağıdaki düğmeye bas.</div>
+  </div>
+
+  <div class="controls">
+    <div class="mod">
+      <button id="modDown" aria-label="Modifikatörü azalt">−</button>
+      <div class="value"><span id="modValue">+0</span><small>Beceri</small></div>
+      <button id="modUp" aria-label="Modifikatörü artır">+</button>
+    </div>
+    <button id="rollBtn">ZAR AT</button>
+  </div>
+
+  <div class="history">
+    <h2>Son atışlar</h2>
+    <ul id="log"><li class="none">Henüz atış yok</li></ul>
+  </div>
+
+<script type="module">
+  import OBR from "https://cdn.jsdelivr.net/npm/@owlbear-rodeo/sdk@3/+esm";
+
+  const CHANNEL = "tr.fate-dice/roll";
+  const LADDER = {
+    "8": "Efsanevi", "7": "Destansı", "6": "Muhteşem", "5": "Olağanüstü",
+    "4": "Harika", "3": "İyi", "2": "Hoş", "1": "Ortalama",
+    "0": "Vasat", "-1": "Zayıf", "-2": "Berbat"
+  };
+  const SYMBOL = { "-1": "−", "0": " ", "1": "+" };
+
+  let playerName = "Oyuncu";
+  let modifier = 0;
+  let rolling = false;
+
+  const $ = (id) => document.getElementById(id);
+  const dieEls = [$("d0"), $("d1"), $("d2"), $("d3")];
+  const fmt = (n) => (n >= 0 ? "+" + n : String(n));
+  const ladderName = (n) => LADDER[String(Math.max(-2, Math.min(8, n)))] ?? "";
+
+  function setDie(el, v) {
+    el.textContent = v === 0 ? "\u00A0" : SYMBOL[String(v)];
+    el.classList.toggle("plus", v === 1);
+    el.classList.toggle("minus", v === -1);
+  }
+
+  function showResult(total) {
+    const cls = total > 0 ? "pos" : total < 0 ? "neg" : "";
+    $("result").innerHTML =
+      `<div class="total ${cls}">${fmt(total)}</div>` +
+      `<div class="ladder">${ladderName(total)}</div>`;
+  }
+
+  function addLog({ name, dice, mod, total }) {
+    const log = $("log");
+    log.querySelector(".none")?.remove();
+    const li = document.createElement("li");
+    const cls = total > 0 ? "pos" : total < 0 ? "neg" : "";
+    const faces = dice.map((d) => (d === 0 ? "▢" : SYMBOL[String(d)])).join(" ");
+    li.innerHTML =
+      `<span class="who"></span>` +
+      `<span class="faces">${faces}</span>` +
+      `<span>${fmt(mod)}</span>` +
+      `<span class="sum ${cls}">${fmt(total)} · ${ladderName(total)}</span>`;
+    li.querySelector(".who").textContent = name;
+    log.prepend(li);
+    while (log.children.length > 8) log.lastElementChild.remove();
+  }
+
+  function rollFate() {
+    return Array.from({ length: 4 }, () => Math.floor(Math.random() * 3) - 1);
+  }
+
+  async function doRoll() {
+    if (rolling) return;
+    rolling = true;
+    $("rollBtn").disabled = true;
+
+    // Yuvarlanma animasyonu
+    dieEls.forEach((el) => el.classList.add("rolling"));
+    const shuffle = setInterval(() => {
+      dieEls.forEach((el) => setDie(el, Math.floor(Math.random() * 3) - 1));
+    }, 90);
+
+    await new Promise((r) => setTimeout(r, 650));
+    clearInterval(shuffle);
+    dieEls.forEach((el) => el.classList.remove("rolling"));
+
+    const dice = rollFate();
+    dice.forEach((v, i) => setDie(dieEls[i], v));
+    const total = dice.reduce((a, b) => a + b, 0) + modifier;
+    showResult(total);
+
+    const payload = { name: playerName, dice, mod: modifier, total };
+    addLog(payload);
+
+    if (OBR.isAvailable) {
+      try {
+        await OBR.broadcast.sendMessage(CHANNEL, payload);
+        await OBR.notification.show(
+          `🎲 ${playerName} 4dF attı: ${fmt(total)} (${ladderName(total)})`,
+          total >= 0 ? "SUCCESS" : "WARNING"
+        );
+      } catch (e) { console.error(e); }
+    }
+
+    rolling = false;
+    $("rollBtn").disabled = false;
+  }
+
+  function setModifier(m) {
+    modifier = Math.max(-4, Math.min(8, m));
+    $("modValue").textContent = fmt(modifier);
+  }
+
+  $("rollBtn").addEventListener("click", doRoll);
+  $("modUp").addEventListener("click", () => setModifier(modifier + 1));
+  $("modDown").addEventListener("click", () => setModifier(modifier - 1));
+
+  if (OBR.isAvailable) {
+    OBR.onReady(async () => {
+      try { playerName = await OBR.player.getName(); } catch {}
+      OBR.broadcast.onMessage(CHANNEL, (event) => {
+        const p = event.data;
+        if (p && Array.isArray(p.dice)) addLog(p);
+      });
+    });
+  }
+</script>
+</body>
+</html>
